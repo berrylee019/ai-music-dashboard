@@ -11,13 +11,15 @@ st.set_page_config(
 )
 
 st.title("🎵 AI 음원 수익화 파이프라인 대시보드")
-st.markdown("클로드(Claude)와 AI 툴을 연동하여 기획부터 유통 패키징까지 탭을 이동하며 진행하는 대시보드입니다.")
+st.markdown("클로드(Claude)와 AI 툴을 연동하여 기획부터 최종 유통 패키징까지 탭을 이동하며 진행하는 대시보드입니다.")
 
 # 세션 상태 초기화
 if "generated_ideas" not in st.session_state:
     st.session_state.generated_ideas = None
 if "selected_track" not in st.session_state:
     st.session_state.selected_track = None
+if "final_package" not in st.session_state:
+    st.session_state.final_package = None
 
 # 사이드바: API 설정
 st.sidebar.header("🔑 설정")
@@ -32,8 +34,13 @@ if api_key_input:
 else:
     st.sidebar.warning("Claude API Key를 입력해주세요.")
 
-# --- 상단 탭 구성 ---
-tab1, tab2, tab3 = st.tabs(["📌 Step 1: 기획 및 프롬프트", "🎨 Step 2: 음원/커버 생성 요청", "📦 Step 3: 유통 패키징"])
+# --- 상단 탭 구성 (Tab 4 추가) ---
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📌 Step 1: 기획 및 프롬프트", 
+    "🎨 Step 2: 음원/커버 생성", 
+    "📦 Step 3: 메타데이터 정리",
+    "🚀 Step 4: 최종 패키지 및 다운로드"
+])
 
 # --- TAB 1: 기획 및 프롬프트 생성 ---
 with tab1:
@@ -59,7 +66,7 @@ with tab1:
                     추가 키워드: '{custom_keyword}'
                     
                     이 조건에 맞는 전 세계 스토어/SNS 유통용 AI 음원 아이디어 3가지를 추천해 주세요.
-                    반드시 아래 포맷에 맞춰서 3개를 작성해 주세요. (파싱을 위한 구조입니다)
+                    반드시 아래 포맷에 맞춰서 3개를 작성해 주세요.
 
                     [아이디어 1]
                     - 곡 제목: (영문 제목 작성)
@@ -104,7 +111,6 @@ with tab2:
     if not st.session_state.generated_ideas:
         st.warning("⚠️ 아직 Step 1에서 생성된 기획안이 없습니다. Step 1 탭에서 먼저 기획안을 생성해 주세요.")
     else:
-        # 간단한 텍스트 파싱 로직 (아이디어별 제목 및 프롬프트 추출 시도)
         ideas_text = st.session_state.generated_ideas
         
         with st.expander("📄 클로드 전체 기획안 보기", expanded=False):
@@ -113,33 +119,26 @@ with tab2:
         st.markdown("---")
         st.markdown("#### 🎵 제작할 곡 선택 (클릭 시 자동 연동)")
         
-        # 3가지 아이디어 선택 탭 (라디오 버튼)
         chosen_idea_tab = st.radio(
             "원하는 아이디어를 선택하세요",
             ["아이디어 1", "아이디어 2", "아이디어 3"],
             horizontal=True
         )
         
-        # 간단하게 텍스트 안에서 키워드 추출 또는 기본값 제공
         default_title = f"AI Music - {chosen_idea_tab}"
         default_style = "Lo-Fi, Chill, Original, Distinct, 120bpm"
         default_cover = "A minimalist abstract square album cover, vibrant colors, no text"
         
-        # 실제 파싱 시도 (간단한 정규식 또는 키워드 기반)
         try:
-            # 예컨대 [아이디어 X] 블록을 잘라서 가져오기
             parts = ideas_text.split(f"[{chosen_idea_tab}]")
             if len(parts) > 1:
                 target_block = parts[1].split("[아이디어")[0]
-                # 제목 추출 시도
                 title_match = re.search(r"곡 제목\s*[:\-]\s*(.*)", target_block)
                 if title_match:
                     default_title = title_match.group(1).strip()
-                # Suno 프롬프트 추출 시도
                 suno_match = re.search(r"Suno 프롬프트\s*[:\-]\s*(.*)", target_block)
                 if suno_match:
                     default_style = suno_match.group(1).strip()
-                # 커버 프롬프트 추출 시도
                 cover_match = re.search(r"커버 프롬프트\s*[:\-]\s*(.*)", target_block)
                 if cover_match:
                     default_cover = cover_match.group(1).strip()
@@ -190,5 +189,51 @@ with tab3:
             """)
         
         if st.button("📦 유통 패키지 정보 최종 확정", type="primary"):
-            st.success(f"'{final_title}' (아티스트: {artist_name}) 배급사 업로드 패키지가 완성되었습니다! DistroKid 등에 업로드하세요.")
-            st.balloons()
+            # Step 4에서 사용할 최종 데이터 패키지 저장
+            st.session_state.final_package = {
+                "title": final_title,
+                "artist": artist_name,
+                "genre": genre,
+                "style_prompt": track_info['style_prompt'],
+                "cover_prompt": track_info['cover_prompt']
+            }
+            st.success("유통 패키지 정보가 확정되었습니다! 상단의 [Step 4] 탭으로 이동하여 최종 파일을 확인하세요.")
+
+# --- TAB 4: 최종 패키지 및 다운로드 ---
+with tab4:
+    st.subheader("Step 4: 최종 유통 패키지 및 파일 다운로드")
+    
+    if not st.session_state.final_package:
+        st.warning("⚠️ 아직 Step 3에서 패키지 정보가 확정되지 않았습니다. Step 3 탭에서 정보를 확정해 주세요.")
+    else:
+        pkg = st.session_state.final_package
+        
+        st.markdown("### 🎉 배급사 업로드 준비 완료!")
+        st.success(f"**곡 제목:** {pkg['title']} | **아티스트:** {pkg['artist']} | **장르:** {pkg['genre']}")
+        
+        # 업로드용 텍스트 파일 내용 생성
+        package_text = f"""=== AI 음원 유통 메타데이터 패키지 ===
+- 곡 제목 (Title): {pkg['title']}
+- 아티스트 명 (Artist): {pkg['artist']}
+- 장르 (Genre): {pkg['genre']}
+
+[Suno 생성 프롬프트]
+{pkg['style_prompt']}
+
+[ChatGPT 커버 이미지 생성 프롬프트]
+{pkg['cover_prompt']}
+=====================================
+"""
+        
+        st.text_area("배급사 입력용 최종 요약", package_text, height=200)
+        
+        # 파일 다운로드 버튼 제공
+        st.download_button(
+            label="📥 업로드 정보(TXT) 다운로드하기",
+            data=package_text,
+            file_name=f"{pkg['title'].replace(' ', '_')}_metadata.txt",
+            mime="text/plain",
+            type="primary"
+        )
+        
+        st.info("💡 **다음 단계 가이드:** DistroKid(또는 디토뮤직 등 배급사) 사이트에 접속하여, Suno에서 다운로드한 음원 파일(.mp3/.wav), ChatGPT로 만든 1:1 커버 이미지, 그리고 위에서 다운로드한 텍스트의 정보를 입력하시면 등록이 완료됩니다!")
