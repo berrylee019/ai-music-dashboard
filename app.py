@@ -77,32 +77,70 @@ if st.button("🚀 클로드 팀장에게 기획안 요청하기", type="primary
             except Exception as e:
                 st.error(f"오류가 발생했습니다: {e}")
 
-# --- STEP 2: 기획안 확인 및 프롬프트 복사 ---
+# --- STEP 2: 기획안 확인 및 생성 요청 ---
 if st.session_state.step >= 2 and st.session_state.generated_ideas:
     st.markdown("---")
-    st.subheader("Step 2: 생성된 기획 및 Suno/ChatGPT 프롬프트 확인")
-    st.markdown("아래 프롬프트를 복사하여 **Suno AI**와 **ChatGPT(이미지 생성)**에 각각 입력하여 음원과 커버를 제작하세요.")
+    st.subheader("Step 2: 기획안 확인 및 AI 음원/커버 생성 요청")
+    st.markdown("클로드가 추천한 3가지 아이디어 중 마음에 드는 곡을 선택하고, 생성 요청을 진행하세요.")
     
-    st.text_area("클로드의 기획안 결과", st.session_state.generated_ideas, height=300)
+    # 기획안 출력
+    st.text_area("클로드의 기획안 결과 (3선)", st.session_state.generated_ideas, height=250)
     
-    if st.button("음원 및 커버 생성을 완료했습니다 (다음 단계로 ➡️)"):
-        st.session_state.step = 3
-        st.rerun()
+    st.markdown("---")
+    st.markdown("#### 🎵 제작할 곡 선택 및 세부 설정")
+    
+    # 사용자가 어떤 곡을 진행할지 선택/입력하는 필드
+    selected_option = st.selectbox(
+        "진행할 아이디어 번호를 선택하세요",
+        ["아이디어 1번", "아이디어 2번", "아이디어 3번"]
+    )
+    
+    track_title_input = st.text_input("선택한 곡의 영문 제목 (Title)", placeholder="예: Midnight Lo-Fi Rain")
+    style_prompt_input = st.text_area("Suno AI 입력용 스타일 프롬프트 (복사해서 Suno에 넣으세요)", placeholder="Lo-Fi hip hop, calm, original, distinct...")
+    cover_prompt_input = st.text_area("ChatGPT 앨범 커버 생성용 프롬프트 (복사해서 DALL-E에 넣으세요)", placeholder="A minimalist square album cover, abstract art, no text...")
+
+    # AI 음원 및 커버 생성 요청 버튼
+    if st.button("🎨 AI 음원 및 커버 생성 요청하기", type="primary"):
+        if not track_title_input or not style_prompt_input:
+            st.warning("곡 제목과 스타일 프롬프트를 입력해 주세요.")
+        else:
+            with st.spinner("AI 툴(Suno/ChatGPT) 연동 및 패키징 시뮬레이션 중..."):
+                # 세션에 현재 선택된 트랙 정보 저장
+                st.session_state.selected_track = {
+                    "option": selected_option,
+                    "title": track_title_input,
+                    "style_prompt": style_prompt_input,
+                    "cover_prompt": cover_prompt_input
+                }
+            st.success(f"'{track_title_input}' 음원 및 커버 생성 요청이 완료되었습니다! 아래에서 최종 패키지를 확인하세요.")
+            st.session_state.step = 3
+            st.rerun()
 
 # --- STEP 3: 유통 메타데이터 정리 및 패키징 ---
-if st.session_state.step >= 3:
+if st.session_state.step >= 3 and st.session_state.selected_track:
     st.markdown("---")
     st.subheader("Step 3: 배급사(DistroKid 등) 업로드 메타데이터 정리")
     
+    track_info = st.session_state.selected_track
+    
     col1, col2 = st.columns(2)
     with col1:
-        track_title = st.text_input("최종 곡 제목 (Title)")
+        st.write(f"**선택한 아이디어:** {track_info['option']}")
+        final_title = st.text_input("최종 곡 제목", value=track_info['title'])
         artist_name = st.text_input("아티스트 명 (Artist)")
-        genre = st.selectbox("장르", ["Hip-Hop", "Lo-Fi", "Electronic", "Pop", "Ambient"])
+        genre = st.selectbox("장르", ["Lo-Fi", "Hip-Hop", "Electronic", "Pop", "Ambient", "Jazz"])
     
     with col2:
-        st.info("💡 **체크리스트**\n- Suno에서 다운로드한 음원 파일(.mp3/.wav)\n- 1:1 정사각형 앨범 커버 이미지 (유명 상표/로고 없음 확인)\n- 메타데이터 정보 입력 완료")
+        st.info(f"""
+        💡 **Suno / 커버 생성에 사용된 프롬프트 참고**
+        - **스타일:** `{track_info['style_prompt']}`
+        - **커버 프롬프트:** `{track_info['cover_prompt']}`
+        
+        **체크리스트**
+        - Suno에서 다운로드한 음원 파일(.mp3) 준비
+        - ChatGPT로 생성한 1:1 정사각형 커버 이미지 저장 완료
+        """)
     
-    if st.button("📦 유통 패키지 정보 저장 및 완료"):
-        st.success(f"'{track_title}' (아티스트: {artist_name}) 배급사 업로드 준비 완료! 이제 DistroKid 등에 업로드하시면 됩니다.")
+    if st.button("📦 유통 패키지 정보 최종 확정"):
+        st.success(f"'{final_title}' (아티스트: {artist_name}) 배급사 업로드 패키지가 완성되었습니다! 이제 DistroKid 등에 업로드하시면 됩니다.")
         st.balloons()
