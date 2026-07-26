@@ -69,7 +69,9 @@ if st.button("🚀 클로드 팀장에게 기획안 요청하기", type="primary
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
-                st.session_state.generated_ideas = message.content[0].text
+                # content 블록 중 type이 'text'인 것만 안전하게 추출
+                text_blocks = [block.text for block in message.content if block.type == "text"]
+                st.session_state.generated_ideas = "\n".join(text_blocks)
                 st.session_state.step = 2
                 st.success("기획안이 성공적으로 생성되었습니다!")
             except Exception as e:
