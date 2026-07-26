@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import anthropic
 
@@ -58,14 +59,25 @@ with tab1:
                     추가 키워드: '{custom_keyword}'
                     
                     이 조건에 맞는 전 세계 스토어/SNS 유통용 AI 음원 아이디어 3가지를 추천해 주세요.
-                    각 아이디어마다 다음 항목을 포함해 주세요:
-                    1. 곡 제목 (영문)
-                    2. 장르 및 분위기
-                    3. Suno AI 입력용 스타일 프롬프트 (영어, 'Original, Distinct' 키워드 포함)
-                    4. 가사 초안 또는 구조 (Verse, Chorus 등)
-                    5. 앨범 커버 이미지 생성용 프롬프트 (영어, 저작권/상표권 회피 주의)
-                    
-                    가독성 좋게 번호 매겨서 출력해 주세요.
+                    반드시 아래 포맷에 맞춰서 3개를 작성해 주세요. (파싱을 위한 구조입니다)
+
+                    [아이디어 1]
+                    - 곡 제목: (영문 제목 작성)
+                    - 장르/분위기: (내용)
+                    - Suno 프롬프트: (영어 프롬프트, 'Original, Distinct' 포함)
+                    - 커버 프롬프트: (영어 프롬프트, 저작권 회피)
+
+                    [아이디어 2]
+                    - 곡 제목: (영문 제목 작성)
+                    - 장르/분위기: (내용)
+                    - Suno 프롬프트: (영어 프롬프트, 'Original, Distinct' 포함)
+                    - 커버 프롬프트: (영어 프롬프트, 저작권 회피)
+
+                    [아이디어 3]
+                    - 곡 제목: (영문 제목 작성)
+                    - 장르/분위기: (내용)
+                    - Suno 프롬프트: (영어 프롬프트, 'Original, Distinct' 포함)
+                    - 커버 프롬프트: (영어 프롬프트, 저작권 회피)
                     """
                     
                     message = client.messages.create(
@@ -83,7 +95,7 @@ with tab1:
     if st.session_state.generated_ideas:
         st.markdown("---")
         st.markdown("#### 💡 현재 생성된 기획안 미리보기")
-        st.text_area("기획안 내용", st.session_state.generated_ideas, height=200, disabled=True)
+        st.text_area("기획안 내용", st.session_state.generated_ideas, height=250, disabled=True)
 
 # --- TAB 2: 음원 및 커버 생성 요청 ---
 with tab2:
@@ -92,27 +104,58 @@ with tab2:
     if not st.session_state.generated_ideas:
         st.warning("⚠️ 아직 Step 1에서 생성된 기획안이 없습니다. Step 1 탭에서 먼저 기획안을 생성해 주세요.")
     else:
-        st.text_area("클로드의 기획안 결과 (3선)", st.session_state.generated_ideas, height=250)
+        # 간단한 텍스트 파싱 로직 (아이디어별 제목 및 프롬프트 추출 시도)
+        ideas_text = st.session_state.generated_ideas
         
+        with st.expander("📄 클로드 전체 기획안 보기", expanded=False):
+            st.text_area("전체 내용", ideas_text, height=200, disabled=True)
+            
         st.markdown("---")
-        st.markdown("#### 🎵 제작할 곡 선택 및 세부 설정")
+        st.markdown("#### 🎵 제작할 곡 선택 (클릭 시 자동 연동)")
         
-        selected_option = st.selectbox(
-            "진행할 아이디어 번호를 선택하세요",
-            ["아이디어 1번", "아이디어 2번", "아이디어 3번"],
-            key="track_option"
+        # 3가지 아이디어 선택 탭 (라디오 버튼)
+        chosen_idea_tab = st.radio(
+            "원하는 아이디어를 선택하세요",
+            ["아이디어 1", "아이디어 2", "아이디어 3"],
+            horizontal=True
         )
         
-        track_title_input = st.text_input("선택한 곡의 영문 제목 (Title)", placeholder="예: Midnight Lo-Fi Rain", key="title_input")
-        style_prompt_input = st.text_area("Suno AI 입력용 스타일 프롬프트", placeholder="Lo-Fi hip hop, calm, original, distinct...", key="style_input")
-        cover_prompt_input = st.text_area("ChatGPT 앨범 커버 생성용 프롬프트", placeholder="A minimalist square album cover, abstract art, no text...", key="cover_input")
+        # 간단하게 텍스트 안에서 키워드 추출 또는 기본값 제공
+        default_title = f"AI Music - {chosen_idea_tab}"
+        default_style = "Lo-Fi, Chill, Original, Distinct, 120bpm"
+        default_cover = "A minimalist abstract square album cover, vibrant colors, no text"
+        
+        # 실제 파싱 시도 (간단한 정규식 또는 키워드 기반)
+        try:
+            # 예컨대 [아이디어 X] 블록을 잘라서 가져오기
+            parts = ideas_text.split(f"[{chosen_idea_tab}]")
+            if len(parts) > 1:
+                target_block = parts[1].split("[아이디어")[0]
+                # 제목 추출 시도
+                title_match = re.search(r"곡 제목\s*[:\-]\s*(.*)", target_block)
+                if title_match:
+                    default_title = title_match.group(1).strip()
+                # Suno 프롬프트 추출 시도
+                suno_match = re.search(r"Suno 프롬프트\s*[:\-]\s*(.*)", target_block)
+                if suno_match:
+                    default_style = suno_match.group(1).strip()
+                # 커버 프롬프트 추출 시도
+                cover_match = re.search(r"커버 프롬프트\s*[:\-]\s*(.*)", target_block)
+                if cover_match:
+                    default_cover = cover_match.group(1).strip()
+        except Exception:
+            pass
+
+        track_title_input = st.text_input("선택한 곡의 영문 제목 (Title)", value=default_title, key="title_input")
+        style_prompt_input = st.text_area("Suno AI 입력용 스타일 프롬프트", value=default_style, key="style_input")
+        cover_prompt_input = st.text_area("ChatGPT 앨범 커버 생성용 프롬프트", value=default_cover, key="cover_input")
 
         if st.button("🎨 AI 음원 및 커버 생성 요청하기", type="primary"):
             if not track_title_input or not style_prompt_input:
                 st.warning("곡 제목과 스타일 프롬프트를 입력해 주세요.")
             else:
                 st.session_state.selected_track = {
-                    "option": selected_option,
+                    "option": chosen_idea_tab,
                     "title": track_title_input,
                     "style_prompt": style_prompt_input,
                     "cover_prompt": cover_prompt_input
