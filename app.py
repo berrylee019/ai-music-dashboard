@@ -64,7 +64,7 @@ if st.button("🚀 클로드 팀장에게 기획안 요청하기", type="primary
                 """
                 
                 message = client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
+                    model="claude-sonnet-5",
                     max_tokens=2000,
                     messages=[{"role": "user", "content": prompt}]
                 )
