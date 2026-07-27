@@ -21,27 +21,21 @@ if "selected_track" not in st.session_state:
 if "final_package" not in st.session_state:
     st.session_state.final_package = None
 
-# 사이드바: API 설정
-st.sidebar.header("🔑 설정")
-api_key_input = st.sidebar.text_input("Anthropic API Key", type="password", value=os.environ.get("ANTHROPIC_API_KEY", ""))
-
-client = None
-if api_key_input:
-    try:
-        client = anthropic.Anthropic(api_key=api_key_input)
-    except Exception as e:
-        st.sidebar.error("API Key 초기화 오류")
-else:
-    st.sidebar.warning("Claude API Key를 입력해주세요.")
-
-# 사이드바
+# --- 사이드바 설정 ---
 with st.sidebar:
     st.title("🛰️ AI Music Factory Dashboard")
-    st.subheader(f"Welcome!")
-    #st.write(f"Role: **{user_info['role']}**")
-
-    #if user_info['role'] == "SuperAdmin":
-        st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
+    st.subheader("Welcome, 형님!") # 필요한 환영 문구
+    
+    st.markdown("---")
+    st.subheader("🔑 API 및 외부 툴")
+    
+    # 기존 API 키 입력 란 (필요시 위치)
+    api_key_input = st.text_input("Anthropic API Key", type="password")
+    
+    st.markdown("---")
+    
+    # Suno AI 바로가기 링크 버튼
+    st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
 
 # --- 상단 탭 구성 (Tab 4 추가) ---
 tab1, tab2, tab3, tab4 = st.tabs([
