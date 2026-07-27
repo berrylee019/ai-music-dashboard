@@ -40,7 +40,7 @@ with st.sidebar:
     #st.subheader(f"Welcome, {user_info['name']}")
     #st.write(f"Role: **{user_info['role']}**")
 
-    if user_info['role'] == "SuperAdmin":
+    #if user_info['role'] == "SuperAdmin":
         st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
 
 # --- 상단 탭 구성 (Tab 4 추가) ---
