@@ -36,7 +36,7 @@ with st.sidebar:
     
     # Suno AI 바로가기 링크 버튼
     st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
-    st.link_button("📂 Music Distributor", "https://distrokid.com/", use_container_width=True)
+    st.link_button("📂 Distrokid for Music Distributor", "https://distrokid.com/", use_container_width=True)
 
 # --- 상단 탭 구성 (Tab 4 추가) ---
 tab1, tab2, tab3, tab4 = st.tabs([
