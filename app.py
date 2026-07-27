@@ -37,8 +37,8 @@ else:
 # 사이드바
 with st.sidebar:
     st.title("🛰️ AI Music Factory Dashboard")
-    st.subheader(f"Welcome, {user_info['name']}")
-    st.write(f"Role: **{user_info['role']}**")
+    #st.subheader(f"Welcome, {user_info['name']}")
+    #st.write(f"Role: **{user_info['role']}**")
 
     if user_info['role'] == "SuperAdmin":
         st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
