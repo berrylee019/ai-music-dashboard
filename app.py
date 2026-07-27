@@ -34,14 +34,14 @@ if api_key_input:
 else:
     st.sidebar.warning("Claude API Key를 입력해주세요.")
 
-    # 사이드바
-    with st.sidebar:
-        st.title("🛰️ AI Music Factory Dashboard")
-        st.subheader(f"Welcome, {user_info['name']}")
-        st.write(f"Role: **{user_info['role']}**")
+# 사이드바
+with st.sidebar:
+    st.title("🛰️ AI Music Factory Dashboard")
+    st.subheader(f"Welcome, {user_info['name']}")
+    st.write(f"Role: **{user_info['role']}**")
 
-        if user_info['role'] == "SuperAdmin":
-            st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
+    if user_info['role'] == "SuperAdmin":
+        st.link_button("📂 Suno-AI for Music Creators", "https://www.suno.com", use_container_width=True)
 
 # --- 상단 탭 구성 (Tab 4 추가) ---
 tab1, tab2, tab3, tab4 = st.tabs([
